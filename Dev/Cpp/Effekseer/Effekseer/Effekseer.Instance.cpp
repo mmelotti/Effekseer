@@ -439,7 +439,11 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 	m_GlobalPosition = parentMatrix.GetTranslation();
 	m_GlobalRevisionLocation = Vec3f(0.0f, 0.0f, 0.0f);
 	m_GlobalRevisionVelocity = Vec3f(0.0f, 0.0f, 0.0f);
+#ifdef OLD_LF
 	modifyWithNoise_ = Vec3f(0.0f, 0.0f, 0.0f);
+#else
+	localForceField_.Reset();
+#endif
 	m_GenerationLocation = Mat43f::Identity;
 	m_GlobalMatrix43 = globalMatrix;
 	assert(m_GlobalMatrix43.IsValid());
@@ -1040,9 +1044,14 @@ void Instance::Update( float deltaFrame, bool shown )
 		CalculateMatrix( deltaFrame );
 	}
 	else if (m_pEffectNode->LocationAbs.type != LocationAbsType::None 
-		|| m_pEffectNode->LocalForceFields[0].Turbulence != nullptr 
-		|| m_pEffectNode->LocalForceFields[1].Turbulence != nullptr 
-		|| m_pEffectNode->LocalForceFields[2].Turbulence != nullptr)
+#ifdef OLD_LF
+		|| m_pEffectNode->LocalForceFieldsOld[0].Turbulence != nullptr 
+		|| m_pEffectNode->LocalForceFieldsOld[1].Turbulence != nullptr 
+		|| m_pEffectNode->LocalForceFieldsOld[2].Turbulence != nullptr
+#else
+		|| m_pEffectNode->LocalForceField.HasValue
+#endif
+		)
 	{
 		// If attraction forces are not default, updating is needed in each frame.
 		CalculateMatrix( deltaFrame );
@@ -1431,17 +1440,21 @@ void Instance::CalculateMatrix( float deltaFrame )
 			currentLocalPosition = localPosition;
 		}
 
+#ifdef OLD_LF
 		currentLocalPosition += modifyWithNoise_;
 
-		for (const auto& field : m_pEffectNode->LocalForceFields)
+		for (const auto& field : m_pEffectNode->LocalForceFieldsOld)
 		{
 			if (field.Turbulence != nullptr)
 			{
 				auto mag = static_cast<EffectImplemented*>(m_pEffectNode->GetEffect())->GetMaginification();
 				modifyWithNoise_ += field.Turbulence->Noise.Get(currentLocalPosition / mag) * field.Turbulence->Strength * mag;
 			}
-
 		}
+#else
+		currentLocalPosition += localForceField_.ModifyLocation;
+		localForceField_.Update(m_pEffectNode->LocalForceField, currentLocalPosition, m_pEffectNode->GetEffect()->GetMaginification());
+#endif
 
 		/* 描画部分の更新 */
 		m_pEffectNode->UpdateRenderedInstance( *this, m_pManager );
@@ -1475,12 +1488,19 @@ void Instance::CalculateMatrix( float deltaFrame )
 
 			m_GlobalMatrix43 *= m_GenerationLocation;
 			assert(m_GlobalMatrix43.IsValid());
-
+#ifdef OLD_LF
 			m_GlobalMatrix43 *= Mat43f::Translation(modifyWithNoise_);
+#else
+			m_GlobalMatrix43 *= Mat43f::Translation(localForceField_.ModifyLocation);
+#endif
 		}
 		else
 		{
+#ifdef OLD_LF
 			localPosition += modifyWithNoise_;
+#else
+			localPosition += localForceField_.ModifyLocation;
+#endif
 
 			m_GlobalMatrix43 = Mat43f::SRT(localScaling, MatRot, localPosition);
 			assert(m_GlobalMatrix43.IsValid());

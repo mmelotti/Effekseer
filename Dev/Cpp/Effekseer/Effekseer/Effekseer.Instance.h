@@ -23,6 +23,7 @@
 #include "Effekseer.EffectNodeRing.h"
 #include "Effekseer.EffectNodeModel.h"
 #include "Effekseer.EffectNodeTrack.h"
+#include "ForceField/ForceFields.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -101,9 +102,12 @@ public:
 	Vec3f	m_GlobalRevisionLocation;
 	Vec3f	m_GlobalRevisionVelocity;
 	
+#ifdef OLD_LF
 	//! for noise
 	Vec3f modifyWithNoise_;
-
+#else
+	LocalForceFieldInstance localForceField_;
+#endif
 	// Color for binding
 	Color		ColorInheritance;
 
