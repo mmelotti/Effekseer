@@ -34,9 +34,17 @@ namespace efk
 		GLFWwindow*	window = nullptr;
 		bool		isOpenGLMode = false;
 		DeviceType	deviceType = DeviceType::OpenGL;
+		bool        minimized = false;
+		bool        maximized = false;
 
 #ifndef _WIN32
         GLuint      vao;
+#endif
+
+#ifdef _WIN32
+		GLFWcursor* vertResize = nullptr;
+		WNDPROC     glfwWndProc = nullptr;
+		static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 #endif
         
 	public:
@@ -61,6 +69,14 @@ namespace efk
 
 		void Close();
 
+		bool IsWindowMaximized() const;
+
+		void SetWindowMaximized(bool maximized);
+
+		bool IsWindowMinimized() const;
+
+		void SetWindowMinimized(bool minimized);
+
 		Vec2 GetMousePosition();
 
 		int GetMouseButton(int32_t mouseButton);
@@ -84,6 +100,11 @@ namespace efk
 		std::function<void(int)> Iconify;
 
 		std::function<void(float)> DpiChanged;
+
+	private:
+		static void GLFW_IconifyCallback(GLFWwindow* w, int f);
+		
+		static void GLFW_MaximizeCallback(GLFWwindow* w, int f);
 	};
 
 }
