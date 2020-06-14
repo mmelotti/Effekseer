@@ -111,6 +111,15 @@ template <typename T> struct RotatorShapeGenerator
 	}
 };
 
+template <typename T> struct RotatedWireShapeGenerator
+{
+
+	Shape Generate(float angleBegin, float angleEnd, float axisBegin, float axisEnd, int32_t axisDivision, int32_t angleDivision)
+	{
+
+	}	
+};
+
 class ShapeGenerator
 {
 public:
